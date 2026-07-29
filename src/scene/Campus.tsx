@@ -1,5 +1,12 @@
 import { Canvas, useFrame } from '@react-three/fiber';
-import { Float, Text, Cloud, Stars, ContactShadows } from '@react-three/drei';
+import {
+  Text,
+  Cloud,
+  Stars,
+  ContactShadows,
+  Environment,
+  Sky,
+} from '@react-three/drei';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import type { LocationId } from '../game/types';
@@ -11,7 +18,7 @@ function useInteractive(id: LocationId) {
   const forced = useGame((s) => s.state?.forcedHospital);
   const phase = useGame((s) => s.state?.phase);
   const locked = !!(forced && id !== 'hospital');
-  const dim =
+  const blocked =
     locked ||
     phase === 'event' ||
     phase === 'gameover' ||
@@ -19,22 +26,17 @@ function useInteractive(id: LocationId) {
     phase === 'title' ||
     !phase;
   return {
-    dim: !!dim && phase !== 'title' && !!phase,
-    titleMode: !phase || phase === 'title',
+    dim: !!(locked || phase === 'event' || phase === 'gameover' || phase === 'victory') && !!phase && phase !== 'title',
     onClick: (e: { stopPropagation: () => void }) => {
       e.stopPropagation();
-      if (phase === 'title' || !phase) return;
-      if (locked || phase === 'event' || phase === 'gameover' || phase === 'victory') return;
+      if (blocked) return;
       open(id);
     },
     onOver: (e: { stopPropagation: () => void }, group: THREE.Group | null) => {
       e.stopPropagation();
       if (phase === 'title' || !phase) return;
-      document.body.style.cursor =
-        locked || phase === 'event' || phase === 'gameover' || phase === 'victory'
-          ? 'not-allowed'
-          : 'pointer';
-      if (group) group.scale.setScalar(1.06);
+      document.body.style.cursor = blocked ? 'not-allowed' : 'pointer';
+      if (group && !blocked) group.scale.setScalar(1.025);
     },
     onOut: (group: THREE.Group | null) => {
       document.body.style.cursor = 'default';
@@ -47,29 +49,67 @@ function Label({ text, y }: { text: string; y: number }) {
   return (
     <Text
       position={[0, y, 0]}
-      fontSize={0.38}
-      color="#fffef5"
+      fontSize={0.32}
+      color="#f4f1ea"
       anchorX="center"
       anchorY="middle"
-      outlineWidth={0.035}
-      outlineColor="#1a2040"
-      fontWeight={700}
+      outlineWidth={0.02}
+      outlineColor="#1a1f18"
+      fillOpacity={0.92}
     >
       {text}
     </Text>
   );
 }
 
-/** Cartoon glass office tower with window grid + rooftop garden ball */
-function OfficeBuilding({ position }: { position: [number, number, number] }) {
+function GlassPanel({
+  args,
+  position,
+  rotation,
+  color = '#8ec8e8',
+  opacity = 0.45,
+}: {
+  args: [number, number, number];
+  position: [number, number, number];
+  rotation?: [number, number, number];
+  color?: string;
+  opacity?: number;
+}) {
+  return (
+    <mesh position={position} rotation={rotation} castShadow>
+      <boxGeometry args={args} />
+      <meshPhysicalMaterial
+        color={color}
+        metalness={0.15}
+        roughness={0.08}
+        transmission={0.55}
+        thickness={0.4}
+        transparent
+        opacity={opacity}
+        envMapIntensity={1.2}
+      />
+    </mesh>
+  );
+}
+
+/** Modern Silicon Valley glass office campus building */
+function OfficeBuilding({
+  position,
+  dim,
+}: {
+  position: [number, number, number];
+  dim: boolean;
+}) {
   const ref = useRef<THREE.Group>(null);
-  const { dim, onClick, onOver, onOut } = useInteractive('company');
+  const { onClick, onOver, onOut } = useInteractive('company');
+  const opacity = dim ? 0.45 : 1;
+
   const windows = useMemo(() => {
-    const pts: [number, number, number][] = [];
-    for (let y = 0.5; y < 3.4; y += 0.55) {
-      for (let x = -0.7; x <= 0.7; x += 0.55) {
-        pts.push([x, y, 0.92]);
-        pts.push([x, y, -0.92]);
+    const pts: { pos: [number, number, number]; w: number; h: number }[] = [];
+    for (let floor = 0; floor < 6; floor++) {
+      const y = 0.55 + floor * 0.58;
+      for (let col = -2; col <= 2; col++) {
+        pts.push({ pos: [col * 0.42, y, 1.02], w: 0.32, h: 0.42 });
       }
     }
     return pts;
@@ -83,49 +123,78 @@ function OfficeBuilding({ position }: { position: [number, number, number] }) {
       onPointerOver={(e) => onOver(e, ref.current)}
       onPointerOut={() => onOut(ref.current)}
     >
-      <mesh castShadow position={[0, 2, 0]}>
-        <boxGeometry args={[2.2, 4, 1.7]} />
-        <meshToonMaterial color={dim ? '#6a8a9a' : '#5ec8ff'} />
+      {/* concrete podium */}
+      <mesh castShadow receiveShadow position={[0, 0.18, 0]}>
+        <boxGeometry args={[2.8, 0.36, 2.2]} />
+        <meshStandardMaterial color="#9a9a92" roughness={0.85} metalness={0.05} transparent opacity={opacity} />
       </mesh>
-      <mesh castShadow position={[0.9, 1.4, 0]}>
-        <boxGeometry args={[0.9, 2.6, 1.4]} />
-        <meshToonMaterial color={dim ? '#5a7a8a' : '#3aa0e8'} />
+      {/* main tower */}
+      <mesh castShadow receiveShadow position={[0, 2.15, 0]}>
+        <boxGeometry args={[2.3, 3.6, 1.85]} />
+        <meshStandardMaterial color="#c8d0d6" roughness={0.35} metalness={0.45} transparent opacity={opacity} />
       </mesh>
-      {/* logo orb */}
-      <mesh position={[0, 4.35, 0]} castShadow>
-        <sphereGeometry args={[0.35, 16, 16]} />
-        <meshToonMaterial color="#ff6bcb" />
+      {/* side wing */}
+      <mesh castShadow receiveShadow position={[1.15, 1.4, 0.1]}>
+        <boxGeometry args={[0.95, 2.1, 1.5]} />
+        <meshStandardMaterial color="#aeb6bc" roughness={0.4} metalness={0.35} transparent opacity={opacity} />
       </mesh>
-      <mesh position={[0, 4.7, 0]}>
-        <cylinderGeometry args={[0.04, 0.04, 0.45, 8]} />
-        <meshToonMaterial color="#ffe566" />
-      </mesh>
-      {windows.map((p, i) => (
-        <mesh key={i} position={p}>
-          <boxGeometry args={[0.32, 0.28, 0.06]} />
-          <meshToonMaterial color={i % 3 === 0 ? '#fff7a0' : '#1a3a5a'} />
+      {/* curtain wall glass face */}
+      <GlassPanel args={[2.15, 3.4, 0.08]} position={[0, 2.15, 0.95]} opacity={dim ? 0.25 : 0.55} />
+      {windows.map((w, i) => (
+        <mesh key={i} position={w.pos}>
+          <boxGeometry args={[w.w, w.h, 0.04]} />
+          <meshStandardMaterial
+            color={i % 5 === 0 ? '#ffe9c2' : '#1c3344'}
+            emissive={i % 5 === 0 ? '#ffd59a' : '#000000'}
+            emissiveIntensity={i % 5 === 0 ? 0.35 : 0}
+            roughness={0.2}
+            metalness={0.6}
+            transparent
+            opacity={opacity}
+          />
         </mesh>
       ))}
-      {/* door */}
-      <mesh position={[0, 0.45, 0.88]}>
-        <boxGeometry args={[0.5, 0.9, 0.08]} />
-        <meshToonMaterial color="#ff9f43" />
+      {/* entrance canopy */}
+      <mesh castShadow position={[0, 0.95, 1.15]}>
+        <boxGeometry args={[1.2, 0.08, 0.55]} />
+        <meshStandardMaterial color="#5a6066" metalness={0.7} roughness={0.3} transparent opacity={opacity} />
       </mesh>
-      <Label text="Company" y={5.2} />
+      <mesh position={[0, 0.5, 1.0]}>
+        <boxGeometry args={[0.7, 0.9, 0.06]} />
+        <meshPhysicalMaterial color="#89b8d4" metalness={0.2} roughness={0.1} transparent opacity={0.65} />
+      </mesh>
+      {/* rooftop HVAC */}
+      <mesh castShadow position={[-0.5, 4.1, 0]}>
+        <boxGeometry args={[0.7, 0.35, 0.55]} />
+        <meshStandardMaterial color="#7a8086" metalness={0.55} roughness={0.4} transparent opacity={opacity} />
+      </mesh>
+      <mesh castShadow position={[0.55, 4.05, 0.2]}>
+        <boxGeometry args={[0.5, 0.25, 0.45]} />
+        <meshStandardMaterial color="#6e747a" metalness={0.5} roughness={0.45} transparent opacity={opacity} />
+      </mesh>
+      <Label text="Company" y={4.55} />
     </group>
   );
 }
 
-/** Exchange building with giant glowing ticker screen + bull-ish spike roof */
-function MarketBuilding({ position }: { position: [number, number, number] }) {
+/** Financial / trading hall with glass atrium */
+function MarketBuilding({
+  position,
+  dim,
+}: {
+  position: [number, number, number];
+  dim: boolean;
+}) {
   const ref = useRef<THREE.Group>(null);
   const screen = useRef<THREE.Mesh>(null);
-  const { dim, onClick, onOver, onOut } = useInteractive('market');
+  const { onClick, onOver, onOut } = useInteractive('market');
+  const opacity = dim ? 0.45 : 1;
+
   useFrame(({ clock }) => {
-    if (screen.current) {
-      const mat = screen.current.material as THREE.MeshToonMaterial;
-      mat.color.set(clock.elapsedTime % 2 < 1 ? '#00ff9c' : '#ff4d6d');
-    }
+    if (!screen.current) return;
+    const mat = screen.current.material as THREE.MeshStandardMaterial;
+    const t = (Math.sin(clock.elapsedTime * 1.4) + 1) / 2;
+    mat.emissive.setRGB(0.02, 0.25 + t * 0.2, 0.08);
   });
 
   return (
@@ -136,45 +205,68 @@ function MarketBuilding({ position }: { position: [number, number, number] }) {
       onPointerOver={(e) => onOver(e, ref.current)}
       onPointerOut={() => onOut(ref.current)}
     >
-      <mesh castShadow position={[0, 1.5, 0]}>
-        <boxGeometry args={[2.6, 3, 2]} />
-        <meshToonMaterial color={dim ? '#4a6a5a' : '#00c853'} />
+      <mesh castShadow receiveShadow position={[0, 1.55, 0]}>
+        <boxGeometry args={[2.7, 3.1, 2.1]} />
+        <meshStandardMaterial color="#2f3d36" roughness={0.55} metalness={0.25} transparent opacity={opacity} />
       </mesh>
-      <mesh castShadow position={[0, 3.3, 0]}>
-        <coneGeometry args={[1.5, 1.1, 4]} />
-        <meshToonMaterial color="#ffd54f" />
+      {/* stone base */}
+      <mesh castShadow receiveShadow position={[0, 0.2, 0]}>
+        <boxGeometry args={[2.95, 0.4, 2.3]} />
+        <meshStandardMaterial color="#8b8f86" roughness={0.9} transparent opacity={opacity} />
       </mesh>
-      {/* ticker screen */}
-      <mesh ref={screen} position={[0, 1.8, 1.05]} castShadow>
-        <boxGeometry args={[2.1, 1.2, 0.12]} />
-        <meshToonMaterial color="#00ff9c" />
+      {/* glass atrium */}
+      <GlassPanel args={[2.4, 2.2, 0.1]} position={[0, 1.8, 1.08]} color="#9fd4b5" opacity={dim ? 0.25 : 0.5} />
+      {/* LED ticker board */}
+      <mesh ref={screen} position={[0, 2.35, 1.16]} castShadow>
+        <boxGeometry args={[2.0, 0.85, 0.06]} />
+        <meshStandardMaterial
+          color="#0a1f14"
+          emissive="#0d3d22"
+          emissiveIntensity={0.9}
+          roughness={0.35}
+          metalness={0.4}
+          transparent
+          opacity={opacity}
+        />
       </mesh>
-      {/* chart zig-zag as boxes */}
-      {[
-        [-0.7, 1.4],
-        [-0.35, 1.7],
-        [0, 1.55],
-        [0.35, 2.0],
-        [0.7, 1.85],
-      ].map(([x, y], i) => (
-        <mesh key={i} position={[x, y, 1.14]}>
-          <boxGeometry args={[0.22, 0.12, 0.08]} />
-          <meshToonMaterial color="#0a1a12" />
+      {/* chart bars on ticker */}
+      {[0.35, 0.55, 0.42, 0.7, 0.5, 0.62].map((h, i) => (
+        <mesh key={i} position={[-0.75 + i * 0.3, 2.05 + h / 2, 1.2]}>
+          <boxGeometry args={[0.14, h, 0.04]} />
+          <meshStandardMaterial
+            color={i % 2 === 0 ? '#3dd68c' : '#e85d4c'}
+            emissive={i % 2 === 0 ? '#1a8a50' : '#8a2a20'}
+            emissiveIntensity={0.5}
+            transparent
+            opacity={opacity}
+          />
         </mesh>
       ))}
-      <mesh position={[0, 0.4, 1.05]}>
-        <boxGeometry args={[0.7, 0.8, 0.1]} />
-        <meshToonMaterial color="#1b5e20" />
+      <mesh position={[0, 0.55, 1.1]}>
+        <boxGeometry args={[0.75, 0.95, 0.08]} />
+        <meshPhysicalMaterial color="#6a9080" metalness={0.3} roughness={0.15} transparent opacity={0.7} />
       </mesh>
-      <Label text="Market" y={4.2} />
+      {/* copper roof trim */}
+      <mesh castShadow position={[0, 3.2, 0]}>
+        <boxGeometry args={[2.85, 0.18, 2.25]} />
+        <meshStandardMaterial color="#8a6a4a" metalness={0.55} roughness={0.35} transparent opacity={opacity} />
+      </mesh>
+      <Label text="Market" y={3.65} />
     </group>
   );
 }
 
-/** Classical cartoon bank with columns + gold dome + coin stack */
-function BankBuilding({ position }: { position: [number, number, number] }) {
+/** Classical bank with stone columns and copper dome */
+function BankBuilding({
+  position,
+  dim,
+}: {
+  position: [number, number, number];
+  dim: boolean;
+}) {
   const ref = useRef<THREE.Group>(null);
-  const { dim, onClick, onOver, onOut } = useInteractive('bank');
+  const { onClick, onOver, onOut } = useInteractive('bank');
+  const opacity = dim ? 0.45 : 1;
 
   return (
     <group
@@ -184,51 +276,60 @@ function BankBuilding({ position }: { position: [number, number, number] }) {
       onPointerOver={(e) => onOver(e, ref.current)}
       onPointerOut={() => onOut(ref.current)}
     >
-      <mesh castShadow position={[0, 1.1, 0]}>
-        <boxGeometry args={[2.8, 2.2, 2]} />
-        <meshToonMaterial color={dim ? '#8a7a55' : '#ffd54f'} />
+      <mesh castShadow receiveShadow position={[0, 1.15, 0]}>
+        <boxGeometry args={[2.9, 2.3, 2.1]} />
+        <meshStandardMaterial color="#d8d2c4" roughness={0.75} metalness={0.08} transparent opacity={opacity} />
       </mesh>
-      <mesh castShadow position={[0, 2.55, 0]}>
-        <boxGeometry args={[3.1, 0.35, 2.3]} />
-        <meshToonMaterial color="#fff8e1" />
+      <mesh castShadow position={[0, 2.45, 0]}>
+        <boxGeometry args={[3.15, 0.28, 2.3]} />
+        <meshStandardMaterial color="#efeae0" roughness={0.65} transparent opacity={opacity} />
       </mesh>
-      <mesh castShadow position={[0, 3.25, 0]}>
-        <sphereGeometry args={[0.85, 16, 12]} />
-        <meshToonMaterial color="#ffca28" />
+      {/* dome */}
+      <mesh castShadow position={[0, 3.15, 0]}>
+        <sphereGeometry args={[0.78, 32, 20, 0, Math.PI * 2, 0, Math.PI / 2]} />
+        <meshStandardMaterial color="#b08d57" metalness={0.65} roughness={0.28} transparent opacity={opacity} />
       </mesh>
-      {[-1, 0, 1].map((x) => (
-        <mesh key={x} castShadow position={[x * 0.85, 1.0, 1.05]}>
-          <cylinderGeometry args={[0.16, 0.16, 2, 10]} />
-          <meshToonMaterial color="#fffde7" />
-        </mesh>
+      <mesh position={[0, 3.55, 0]}>
+        <cylinderGeometry args={[0.08, 0.08, 0.35, 12]} />
+        <meshStandardMaterial color="#9a7a45" metalness={0.7} roughness={0.3} transparent opacity={opacity} />
+      </mesh>
+      {[-1.05, 0, 1.05].map((x) => (
+        <group key={x}>
+          <mesh castShadow position={[x, 1.05, 1.12]}>
+            <cylinderGeometry args={[0.14, 0.16, 1.9, 16]} />
+            <meshStandardMaterial color="#f0ebe3" roughness={0.55} transparent opacity={opacity} />
+          </mesh>
+          <mesh position={[x, 2.05, 1.12]}>
+            <boxGeometry args={[0.38, 0.12, 0.38]} />
+            <meshStandardMaterial color="#e8e2d6" roughness={0.6} transparent opacity={opacity} />
+          </mesh>
+        </group>
       ))}
-      {/* coin stacks */}
-      {[0, 1, 2].map((i) => (
-        <mesh key={i} position={[1.6, 0.2 + i * 0.18, 0.6]} castShadow>
-          <cylinderGeometry args={[0.28, 0.28, 0.12, 16]} />
-          <meshToonMaterial color="#ffeb3b" />
-        </mesh>
-      ))}
-      <mesh position={[0, 0.55, 1.15]}>
-        <boxGeometry args={[0.7, 1.1, 0.1]} />
-        <meshToonMaterial color="#6d4c41" />
+      <mesh position={[0, 0.55, 1.2]}>
+        <boxGeometry args={[0.65, 1.0, 0.08]} />
+        <meshStandardMaterial color="#3d3228" roughness={0.55} metalness={0.15} transparent opacity={opacity} />
       </mesh>
-      <Label text="Bank" y={4.35} />
+      {/* steps */}
+      <mesh receiveShadow position={[0, 0.12, 1.35]}>
+        <boxGeometry args={[2.2, 0.12, 0.55]} />
+        <meshStandardMaterial color="#c4beb2" roughness={0.85} transparent opacity={opacity} />
+      </mesh>
+      <Label text="Bank" y={4.0} />
     </group>
   );
 }
 
-/** Hospital with red cross + ambulance blob */
-function HospitalBuilding({ position }: { position: [number, number, number] }) {
+/** Medical clinic — clean white facade, red cross, ambulance */
+function HospitalBuilding({
+  position,
+  dim,
+}: {
+  position: [number, number, number];
+  dim: boolean;
+}) {
   const ref = useRef<THREE.Group>(null);
-  const { dim, onClick, onOver, onOut } = useInteractive('hospital');
-  const pulse = useRef<THREE.Mesh>(null);
-  useFrame(({ clock }) => {
-    if (pulse.current) {
-      const s = 1 + Math.sin(clock.elapsedTime * 3) * 0.08;
-      pulse.current.scale.set(s, s, s);
-    }
-  });
+  const { onClick, onOver, onOut } = useInteractive('hospital');
+  const opacity = dim ? 0.45 : 1;
 
   return (
     <group
@@ -238,49 +339,73 @@ function HospitalBuilding({ position }: { position: [number, number, number] }) 
       onPointerOver={(e) => onOver(e, ref.current)}
       onPointerOut={() => onOut(ref.current)}
     >
-      <mesh castShadow position={[0, 1.6, 0]}>
-        <boxGeometry args={[2.4, 3.2, 2.2]} />
-        <meshToonMaterial color={dim ? '#c0c0c0' : '#ffffff'} />
+      <mesh castShadow receiveShadow position={[0, 1.65, 0]}>
+        <boxGeometry args={[2.5, 3.3, 2.25]} />
+        <meshStandardMaterial color="#f2f4f6" roughness={0.55} metalness={0.05} transparent opacity={opacity} />
       </mesh>
-      <mesh castShadow position={[1.1, 1.0, 0]}>
-        <boxGeometry args={[1.2, 2, 1.8]} />
-        <meshToonMaterial color="#e3f2fd" />
+      <mesh castShadow receiveShadow position={[1.2, 1.05, 0]}>
+        <boxGeometry args={[1.15, 2.1, 1.85]} />
+        <meshStandardMaterial color="#e4eaf0" roughness={0.5} transparent opacity={opacity} />
       </mesh>
-      {/* red cross */}
-      <mesh ref={pulse} position={[0, 2.2, 1.15]}>
-        <boxGeometry args={[0.35, 1.1, 0.12]} />
-        <meshToonMaterial color="#ff1744" />
+      {/* window bands */}
+      {[0.9, 1.6, 2.3].map((y) => (
+        <mesh key={y} position={[-0.15, y, 1.15]}>
+          <boxGeometry args={[1.9, 0.4, 0.05]} />
+          <meshPhysicalMaterial color="#7eb6d4" metalness={0.2} roughness={0.12} transparent opacity={0.7} />
+        </mesh>
+      ))}
+      {/* red cross sign */}
+      <mesh position={[0, 2.55, 1.18]}>
+        <boxGeometry args={[0.28, 0.95, 0.08]} />
+        <meshStandardMaterial color="#c62828" roughness={0.4} emissive="#5a1010" emissiveIntensity={0.2} transparent opacity={opacity} />
       </mesh>
-      <mesh position={[0, 2.2, 1.15]}>
-        <boxGeometry args={[1.1, 0.35, 0.12]} />
-        <meshToonMaterial color="#ff1744" />
+      <mesh position={[0, 2.55, 1.18]}>
+        <boxGeometry args={[0.95, 0.28, 0.08]} />
+        <meshStandardMaterial color="#c62828" roughness={0.4} emissive="#5a1010" emissiveIntensity={0.2} transparent opacity={opacity} />
       </mesh>
       {/* ambulance */}
-      <mesh castShadow position={[-1.8, 0.45, 1.4]}>
-        <boxGeometry args={[1.3, 0.7, 0.7]} />
-        <meshToonMaterial color="#ff5252" />
+      <group position={[-1.95, 0, 1.55]}>
+        <mesh castShadow position={[0, 0.45, 0]}>
+          <boxGeometry args={[1.35, 0.65, 0.72]} />
+          <meshStandardMaterial color="#eceff1" roughness={0.35} metalness={0.25} transparent opacity={opacity} />
+        </mesh>
+        <mesh position={[0.35, 0.75, 0]}>
+          <boxGeometry args={[0.55, 0.35, 0.68]} />
+          <meshPhysicalMaterial color="#90caf9" metalness={0.2} roughness={0.1} transparent opacity={0.75} />
+        </mesh>
+        <mesh position={[-0.15, 0.55, 0.38]}>
+          <boxGeometry args={[0.45, 0.2, 0.04]} />
+          <meshStandardMaterial color="#c62828" transparent opacity={opacity} />
+        </mesh>
+        <mesh castShadow position={[-0.4, 0.18, 0.28]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.16, 0.16, 0.12, 16]} />
+          <meshStandardMaterial color="#212121" roughness={0.7} />
+        </mesh>
+        <mesh castShadow position={[0.4, 0.18, 0.28]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.16, 0.16, 0.12, 16]} />
+          <meshStandardMaterial color="#212121" roughness={0.7} />
+        </mesh>
+      </group>
+      <mesh position={[0, 0.55, 1.16]}>
+        <boxGeometry args={[0.7, 1.0, 0.06]} />
+        <meshPhysicalMaterial color="#90a4ae" metalness={0.25} roughness={0.15} transparent opacity={0.7} />
       </mesh>
-      <mesh position={[-1.35, 0.75, 1.4]}>
-        <boxGeometry args={[0.5, 0.4, 0.65]} />
-        <meshToonMaterial color="#bbdefb" />
-      </mesh>
-      <mesh position={[-2.2, 0.18, 1.65]}>
-        <sphereGeometry args={[0.18, 12, 12]} />
-        <meshToonMaterial color="#212121" />
-      </mesh>
-      <mesh position={[-1.4, 0.18, 1.65]}>
-        <sphereGeometry args={[0.18, 12, 12]} />
-        <meshToonMaterial color="#212121" />
-      </mesh>
-      <Label text="Hospital" y={3.6} />
+      <Label text="Hospital" y={3.55} />
     </group>
   );
 }
 
-/** Cute suburban house with pitched roof */
-function RealtyHouse({ position }: { position: [number, number, number] }) {
+/** Peninsula craftsman / modern house for realty */
+function RealtyHouse({
+  position,
+  dim,
+}: {
+  position: [number, number, number];
+  dim: boolean;
+}) {
   const ref = useRef<THREE.Group>(null);
-  const { dim, onClick, onOver, onOut } = useInteractive('realestate');
+  const { onClick, onOver, onOut } = useInteractive('realestate');
+  const opacity = dim ? 0.45 : 1;
 
   return (
     <group
@@ -290,104 +415,99 @@ function RealtyHouse({ position }: { position: [number, number, number] }) {
       onPointerOver={(e) => onOver(e, ref.current)}
       onPointerOut={() => onOut(ref.current)}
     >
-      <mesh castShadow position={[0, 1.0, 0]}>
-        <boxGeometry args={[2.6, 2, 2.2]} />
-        <meshToonMaterial color={dim ? '#a08070' : '#ff8a65'} />
+      <mesh castShadow receiveShadow position={[0, 1.05, 0]}>
+        <boxGeometry args={[2.7, 2.1, 2.3]} />
+        <meshStandardMaterial color="#c4a484" roughness={0.8} metalness={0.05} transparent opacity={opacity} />
       </mesh>
-      <mesh castShadow position={[0, 2.5, 0]} rotation={[0, Math.PI / 4, 0]}>
-        <coneGeometry args={[2.1, 1.5, 4]} />
-        <meshToonMaterial color="#7e57c2" />
+      {/* pitched roof */}
+      <mesh castShadow position={[0, 2.45, 0]} rotation={[0, Math.PI / 4, 0]}>
+        <coneGeometry args={[2.05, 1.35, 4]} />
+        <meshStandardMaterial color="#5c4a3e" roughness={0.7} metalness={0.1} transparent opacity={opacity} />
       </mesh>
-      {/* chimney */}
-      <mesh castShadow position={[0.8, 2.9, -0.3]}>
-        <boxGeometry args={[0.35, 0.8, 0.35]} />
-        <meshToonMaterial color="#8d6e63" />
+      <mesh castShadow position={[0.85, 2.85, -0.25]}>
+        <boxGeometry args={[0.32, 0.7, 0.32]} />
+        <meshStandardMaterial color="#6d5a4c" roughness={0.75} transparent opacity={opacity} />
       </mesh>
-      {/* door + windows */}
-      <mesh position={[0, 0.7, 1.15]}>
-        <boxGeometry args={[0.55, 1.0, 0.08]} />
-        <meshToonMaterial color="#5d4037" />
+      <mesh position={[0, 0.7, 1.18]}>
+        <boxGeometry args={[0.55, 1.05, 0.06]} />
+        <meshStandardMaterial color="#3e342c" roughness={0.6} transparent opacity={opacity} />
       </mesh>
-      <mesh position={[-0.8, 1.2, 1.15]}>
-        <boxGeometry args={[0.5, 0.5, 0.08]} />
-        <meshToonMaterial color="#81d4fa" />
+      <mesh position={[-0.85, 1.25, 1.18]}>
+        <boxGeometry args={[0.55, 0.55, 0.05]} />
+        <meshPhysicalMaterial color="#a8d0e8" metalness={0.15} roughness={0.1} transparent opacity={0.7} />
       </mesh>
-      <mesh position={[0.8, 1.2, 1.15]}>
-        <boxGeometry args={[0.5, 0.5, 0.08]} />
-        <meshToonMaterial color="#81d4fa" />
+      <mesh position={[0.85, 1.25, 1.18]}>
+        <boxGeometry args={[0.55, 0.55, 0.05]} />
+        <meshPhysicalMaterial color="#a8d0e8" metalness={0.15} roughness={0.1} transparent opacity={0.7} />
       </mesh>
-      {/* lawn flowers */}
-      {[
-        [-1.3, 0.8],
-        [1.2, 1.0],
-        [-0.9, 1.4],
-      ].map(([x, z], i) => (
-        <mesh key={i} position={[x, 0.15, z]}>
-          <sphereGeometry args={[0.12, 8, 8]} />
-          <meshToonMaterial color={['#ff4081', '#ffeb3b', '#ea80fc'][i]} />
+      {/* porch */}
+      <mesh castShadow position={[0, 0.95, 1.35]}>
+        <boxGeometry args={[1.4, 0.06, 0.55]} />
+        <meshStandardMaterial color="#8a7a68" roughness={0.7} transparent opacity={opacity} />
+      </mesh>
+      {/* oak tree */}
+      <group position={[1.7, 0, 1.0]}>
+        <mesh castShadow position={[0, 0.85, 0]}>
+          <cylinderGeometry args={[0.1, 0.14, 1.5, 10]} />
+          <meshStandardMaterial color="#5d4037" roughness={0.9} transparent opacity={opacity} />
         </mesh>
-      ))}
-      <mesh position={[1.5, 0.7, 0.8]} castShadow>
-        <cylinderGeometry args={[0.08, 0.12, 1.2, 8]} />
-        <meshToonMaterial color="#6d4c41" />
+        <mesh castShadow position={[0, 1.85, 0]}>
+          <sphereGeometry args={[0.7, 20, 16]} />
+          <meshStandardMaterial color="#3d6b45" roughness={0.85} transparent opacity={opacity} />
+        </mesh>
+        <mesh castShadow position={[0.35, 1.65, 0.2]}>
+          <sphereGeometry args={[0.45, 16, 12]} />
+          <meshStandardMaterial color="#4a7a52" roughness={0.85} transparent opacity={opacity} />
+        </mesh>
+      </group>
+      {/* lawn hedge */}
+      <mesh receiveShadow position={[0, 0.18, 1.7]}>
+        <boxGeometry args={[2.4, 0.25, 0.35]} />
+        <meshStandardMaterial color="#4f7a4a" roughness={0.9} transparent opacity={opacity} />
       </mesh>
-      <mesh position={[1.5, 1.5, 0.8]} castShadow>
-        <sphereGeometry args={[0.55, 12, 12]} />
-        <meshToonMaterial color="#66bb6a" />
-      </mesh>
-      <Label text="Realty" y={3.6} />
+      <Label text="Realty" y={3.45} />
     </group>
   );
 }
 
-function CartoonAvatar() {
+function EngineerAvatar() {
   const week = useGame((s) => s.state?.week ?? 1);
   const ref = useRef<THREE.Group>(null);
   const targets = useMemo(
     () => [
-      [-3.2, 0, 2.2],
-      [2.8, 0, 3.2],
-      [0.2, 0, -1.2],
-      [-4.5, 0, -0.3],
-      [4.2, 0, 0.5],
+      [-3.2, 0, 2.3],
+      [2.9, 0, 3.3],
+      [0.2, 0, -1.3],
+      [-4.6, 0, -0.4],
+      [4.4, 0, 0.4],
     ],
     [],
   );
   useFrame((state) => {
     if (!ref.current) return;
     const t = targets[week % targets.length];
-    ref.current.position.x = THREE.MathUtils.lerp(ref.current.position.x, t[0], 0.05);
-    ref.current.position.z = THREE.MathUtils.lerp(ref.current.position.z, t[2], 0.05);
-    ref.current.position.y = 0.55 + Math.sin(state.clock.elapsedTime * 4) * 0.06;
-    ref.current.rotation.y = Math.sin(state.clock.elapsedTime) * 0.2;
+    ref.current.position.x = THREE.MathUtils.lerp(ref.current.position.x, t[0], 0.04);
+    ref.current.position.z = THREE.MathUtils.lerp(ref.current.position.z, t[2], 0.04);
+    ref.current.position.y = 0.52 + Math.sin(state.clock.elapsedTime * 2.2) * 0.03;
   });
+
   return (
-    <group ref={ref} position={[0, 0.55, 2.5]}>
+    <group ref={ref} position={[0, 0.52, 2.6]}>
       <mesh castShadow position={[0, 0, 0]}>
-        <capsuleGeometry args={[0.22, 0.4, 4, 8]} />
-        <meshToonMaterial color="#7c4dff" />
+        <capsuleGeometry args={[0.2, 0.42, 6, 12]} />
+        <meshStandardMaterial color="#2c3e50" roughness={0.65} metalness={0.1} />
       </mesh>
-      <mesh castShadow position={[0, 0.55, 0]}>
-        <sphereGeometry args={[0.28, 16, 16]} />
-        <meshToonMaterial color="#ffcc80" />
+      <mesh castShadow position={[0, 0.52, 0]}>
+        <sphereGeometry args={[0.22, 24, 24]} />
+        <meshStandardMaterial color="#d2a679" roughness={0.55} />
       </mesh>
-      <mesh position={[0.1, 0.6, 0.22]}>
-        <sphereGeometry args={[0.05, 8, 8]} />
-        <meshToonMaterial color="#212121" />
+      <mesh position={[0, 0.62, -0.02]}>
+        <sphereGeometry args={[0.23, 20, 16, 0, Math.PI * 2, 0, Math.PI / 2.2]} />
+        <meshStandardMaterial color="#1a1a1a" roughness={0.8} />
       </mesh>
-      <mesh position={[-0.1, 0.6, 0.22]}>
-        <sphereGeometry args={[0.05, 8, 8]} />
-        <meshToonMaterial color="#212121" />
-      </mesh>
-      {/* hoodie hood */}
-      <mesh position={[0, 0.72, -0.05]}>
-        <sphereGeometry args={[0.22, 12, 12, 0, Math.PI * 2, 0, Math.PI / 2]} />
-        <meshToonMaterial color="#651fff" />
-      </mesh>
-      {/* laptop */}
-      <mesh position={[0.35, 0.25, 0.25]} rotation={[0.4, -0.3, 0]}>
-        <boxGeometry args={[0.35, 0.02, 0.25]} />
-        <meshToonMaterial color="#90caf9" />
+      <mesh position={[0.32, 0.2, 0.22]} rotation={[0.5, -0.4, 0.1]}>
+        <boxGeometry args={[0.32, 0.02, 0.22]} />
+        <meshStandardMaterial color="#37474f" metalness={0.4} roughness={0.35} />
       </mesh>
     </group>
   );
@@ -396,11 +516,11 @@ function CartoonAvatar() {
 function Rain({ active }: { active: boolean }) {
   const ref = useRef<THREE.Points>(null);
   const positions = useMemo(() => {
-    const arr = new Float32Array(400 * 3);
-    for (let i = 0; i < 400; i++) {
-      arr[i * 3] = (Math.random() - 0.5) * 24;
-      arr[i * 3 + 1] = Math.random() * 14;
-      arr[i * 3 + 2] = (Math.random() - 0.5) * 24;
+    const arr = new Float32Array(500 * 3);
+    for (let i = 0; i < 500; i++) {
+      arr[i * 3] = (Math.random() - 0.5) * 28;
+      arr[i * 3 + 1] = Math.random() * 16;
+      arr[i * 3 + 2] = (Math.random() - 0.5) * 28;
     }
     return arr;
   }, []);
@@ -408,8 +528,8 @@ function Rain({ active }: { active: boolean }) {
     if (!active || !ref.current) return;
     const pos = ref.current.geometry.attributes.position as THREE.BufferAttribute;
     for (let i = 0; i < pos.count; i++) {
-      let y = pos.getY(i) - dt * 8;
-      if (y < 0) y = 12;
+      let y = pos.getY(i) - dt * 9;
+      if (y < 0) y = 14;
       pos.setY(i, y);
     }
     pos.needsUpdate = true;
@@ -420,72 +540,53 @@ function Rain({ active }: { active: boolean }) {
       <bufferGeometry>
         <bufferAttribute attach="attributes-position" args={[positions, 3]} />
       </bufferGeometry>
-      <pointsMaterial color="#a0d8ff" size={0.08} transparent opacity={0.7} />
+      <pointsMaterial color="#b7c9d6" size={0.05} transparent opacity={0.55} depthWrite={false} />
     </points>
   );
 }
 
-function NatureDecor({ theme }: { theme: WeatherTheme }) {
+function Nature({ theme }: { theme: WeatherTheme }) {
   return (
     <>
-      {/* colorful hills */}
-      <Float speed={0.35} floatIntensity={0.2}>
-        <mesh position={[-10, 1.2, -7]} castShadow>
-          <sphereGeometry args={[3.2, 16, 12]} />
-          <meshToonMaterial color="#43a047" />
-        </mesh>
-      </Float>
-      <mesh position={[11, 1.6, -6]} castShadow>
-        <sphereGeometry args={[3.8, 16, 12]} />
-        <meshToonMaterial color="#66bb6a" />
+      {/* distant hills */}
+      <mesh position={[-11, 0.9, -8]} castShadow>
+        <sphereGeometry args={[3.6, 32, 20]} />
+        <meshStandardMaterial color="#4a6b52" roughness={0.95} />
       </mesh>
-      <mesh position={[-6, 0.8, -9]} castShadow>
-        <sphereGeometry args={[2.2, 14, 10]} />
-        <meshToonMaterial color="#81c784" />
+      <mesh position={[12, 1.3, -7]} castShadow>
+        <sphereGeometry args={[4.2, 32, 20]} />
+        <meshStandardMaterial color="#557a5c" roughness={0.95} />
       </mesh>
-      {/* palm-ish trees */}
+      <mesh position={[-5, 0.6, -10]} castShadow>
+        <sphereGeometry args={[2.4, 28, 16]} />
+        <meshStandardMaterial color="#5d8260" roughness={0.95} />
+      </mesh>
+      {/* trees */}
       {[
-        [-7, 3],
-        [6.5, 4],
-        [-2, 5.5],
-        [8, -2],
+        [-7.2, 3.2],
+        [6.8, 4.2],
+        [-2.2, 5.8],
+        [8.2, -2.2],
+        [-8.5, -3],
       ].map(([x, z], i) => (
         <group key={i} position={[x, 0, z]}>
-          <mesh castShadow position={[0, 1.1, 0]}>
-            <cylinderGeometry args={[0.12, 0.18, 2.2, 8]} />
-            <meshToonMaterial color="#8d6e63" />
+          <mesh castShadow position={[0, 1.0, 0]}>
+            <cylinderGeometry args={[0.11, 0.16, 1.8, 10]} />
+            <meshStandardMaterial color="#5d4037" roughness={0.9} />
           </mesh>
-          <mesh castShadow position={[0, 2.3, 0]}>
-            <sphereGeometry args={[0.85, 12, 12]} />
-            <meshToonMaterial color={['#26a69a', '#42a5f5', '#ab47bc', '#ff7043'][i]} />
+          <mesh castShadow position={[0, 2.15, 0]}>
+            <sphereGeometry args={[0.85, 20, 16]} />
+            <meshStandardMaterial color={i % 2 === 0 ? '#3f6b46' : '#4a7a52'} roughness={0.88} />
           </mesh>
         </group>
       ))}
-      {/* flowers field */}
-      {Array.from({ length: 18 }).map((_, i) => (
-        <mesh
-          key={i}
-          position={[(i % 6) * 1.2 - 3.5, 0.12, 4.5 + Math.floor(i / 6) * 0.7]}
-        >
-          <sphereGeometry args={[0.1, 8, 8]} />
-          <meshToonMaterial
-            color={['#ff4081', '#ffeb3b', '#40c4ff', '#ea80fc', '#69f0ae'][i % 5]}
-          />
-        </mesh>
-      ))}
-      {/* cartoon sun / moon */}
-      <mesh position={[7, 9, -8]}>
-        <sphereGeometry args={[1.2, 20, 20]} />
-        <meshBasicMaterial color={theme.sunColor} />
-      </mesh>
       {theme.cloudOpacity > 0.2 && (
         <>
-          <Cloud position={[-4, 7, -3]} opacity={theme.cloudOpacity} speed={0.2} scale={1.4} />
-          <Cloud position={[5, 8, -5]} opacity={theme.cloudOpacity * 0.9} speed={0.15} scale={1.8} />
-          <Cloud position={[0, 9, -8]} opacity={theme.cloudOpacity * 0.7} speed={0.1} scale={2.2} />
+          <Cloud position={[-5, 8, -6]} opacity={theme.cloudOpacity * 0.55} speed={0.12} segments={20} />
+          <Cloud position={[6, 9, -8]} opacity={theme.cloudOpacity * 0.45} speed={0.08} segments={24} />
         </>
       )}
-      {theme.showStars && <Stars radius={40} depth={30} count={800} factor={3} fade speed={0.6} />}
+      {theme.showStars && <Stars radius={50} depth={40} count={1200} factor={2.5} fade speed={0.4} />}
       <Rain active={theme.showRain} />
     </>
   );
@@ -493,45 +594,78 @@ function NatureDecor({ theme }: { theme: WeatherTheme }) {
 
 function Campus({ theme }: { theme: WeatherTheme }) {
   const showTitle = useGame((s) => !s.state || s.state.phase === 'title');
+  const company = useInteractive('company');
+  const market = useInteractive('market');
+  const bank = useInteractive('bank');
+  const hospital = useInteractive('hospital');
+  const realty = useInteractive('realestate');
 
   return (
     <>
       <color attach="background" args={[theme.skyTop]} />
-      <fog attach="fog" args={[theme.fog, 14, 42]} />
-      <ambientLight intensity={0.7} color={theme.ambient} />
-      <hemisphereLight args={[theme.hemiSky, theme.hemiGround, 0.85]} />
+      <fog attach="fog" args={[theme.fog, 16, 48]} />
+      <ambientLight intensity={0.35} color={theme.ambient} />
+      <hemisphereLight args={[theme.hemiSky, theme.hemiGround, 0.55]} />
       <directionalLight
         castShadow
         intensity={theme.sunIntensity}
-        position={[8, 12, 5]}
+        position={[10, 14, 6]}
         color={theme.sunColor}
-        shadow-mapSize={[1024, 1024]}
+        shadow-mapSize={[2048, 2048]}
+        shadow-camera-far={40}
+        shadow-camera-left={-15}
+        shadow-camera-right={15}
+        shadow-camera-top={15}
+        shadow-camera-bottom={-15}
       />
+      <directionalLight intensity={0.25} position={[-6, 4, -4]} color="#a8c4e0" />
 
-      {/* sky gradient ground plane + bay water */}
+      {theme.isDay && !theme.showRain && (
+        <Sky
+          sunPosition={[8, theme.kind === 'clear' ? 6 : 3, 2]}
+          turbidity={theme.kind === 'clear' ? 4 : 8}
+          rayleigh={theme.kind === 'clear' ? 1.2 : 0.6}
+          mieCoefficient={0.005}
+          mieDirectionalG={0.8}
+        />
+      )}
+      <Environment preset={theme.isDay ? 'city' : 'night'} environmentIntensity={0.45} />
+
+      {/* ground */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
-        <circleGeometry args={[20, 64]} />
-        <meshToonMaterial color={theme.ground} />
+        <circleGeometry args={[22, 64]} />
+        <meshStandardMaterial color={theme.ground} roughness={0.95} metalness={0.02} />
       </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[11, -0.03, 7]} receiveShadow>
-        <circleGeometry args={[11, 48]} />
-        <meshToonMaterial color={theme.water} />
+      {/* bay water */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[12, -0.04, 8]} receiveShadow>
+        <circleGeometry args={[12, 48]} />
+        <meshPhysicalMaterial
+          color={theme.water}
+          roughness={0.15}
+          metalness={0.2}
+          transmission={0.15}
+          thickness={0.5}
+        />
       </mesh>
-      {/* rainbow path */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0.5]} receiveShadow>
-        <planeGeometry args={[2.4, 13]} />
-        <meshToonMaterial color="#ffe082" />
+      {/* asphalt path */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.015, 0.4]} receiveShadow>
+        <planeGeometry args={[2.0, 14]} />
+        <meshStandardMaterial color="#4a4a48" roughness={0.9} />
+      </mesh>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0.4]}>
+        <planeGeometry args={[0.08, 13]} />
+        <meshStandardMaterial color="#c4b48a" roughness={0.7} />
       </mesh>
 
-      <OfficeBuilding position={[-3.4, 0, 1.0]} />
-      <MarketBuilding position={[3.0, 0, 2.0]} />
-      <BankBuilding position={[0.1, 0, -2.6]} />
-      <HospitalBuilding position={[-4.8, 0, -1.8]} />
-      <RealtyHouse position={[4.6, 0, -1.0]} />
+      <OfficeBuilding position={[-3.4, 0, 1.0]} dim={company.dim} />
+      <MarketBuilding position={[3.0, 0, 2.0]} dim={market.dim} />
+      <BankBuilding position={[0.1, 0, -2.6]} dim={bank.dim} />
+      <HospitalBuilding position={[-4.8, 0, -1.8]} dim={hospital.dim} />
+      <RealtyHouse position={[4.6, 0, -1.0]} dim={realty.dim} />
 
-      {!showTitle && <CartoonAvatar />}
-      <NatureDecor theme={theme} />
-      <ContactShadows opacity={0.4} scale={30} blur={2.2} far={10} color="#1a3040" />
+      {!showTitle && <EngineerAvatar />}
+      <Nature theme={theme} />
+      <ContactShadows opacity={0.45} scale={32} blur={2.8} far={12} color="#1a2420" />
       <PerspectiveCam />
     </>
   );
@@ -541,12 +675,12 @@ function PerspectiveCam() {
   const phase = useGame((s) => s.state?.phase);
   useFrame(({ camera, clock }) => {
     const title = !phase || phase === 'title';
-    const targetY = title ? 6.2 : 8.0;
-    const targetZ = title ? 12 : 14.5;
+    const targetY = title ? 5.8 : 7.6;
+    const targetZ = title ? 11.5 : 14;
     camera.position.y = THREE.MathUtils.lerp(camera.position.y, targetY, 0.03);
     camera.position.z = THREE.MathUtils.lerp(camera.position.z, targetZ, 0.03);
-    camera.position.x = Math.sin(clock.elapsedTime * 0.15) * (title ? 0.5 : 1.0);
-    camera.lookAt(0, 1.2, 0);
+    camera.position.x = Math.sin(clock.elapsedTime * 0.1) * (title ? 0.35 : 0.7);
+    camera.lookAt(0, 1.0, 0);
   });
   return null;
 }
@@ -573,8 +707,11 @@ export function Scene() {
       <Canvas
         shadows
         dpr={[1, 1.75]}
-        camera={{ position: [0, 6.2, 12], fov: 42, near: 0.1, far: 90 }}
-        gl={{ antialias: true }}
+        camera={{ position: [0, 5.8, 11.5], fov: 40, near: 0.1, far: 100 }}
+        gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping }}
+        onCreated={({ gl }) => {
+          gl.toneMappingExposure = 1.05;
+        }}
       >
         <Campus theme={theme} />
       </Canvas>
