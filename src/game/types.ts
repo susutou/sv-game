@@ -39,6 +39,8 @@ export type TickerId = 'bigtech' | 'index' | 'meme' | 'crypto' | 'company';
 
 export interface StockHolding {
   shares: number;
+  /** Average cost basis per share (for unrealized P&L). */
+  avgCost: number;
 }
 
 export interface MarketState {

@@ -27,7 +27,7 @@ function tickMarkets(state: GameState): GameState {
   };
   const history = { ...state.market.history };
   (Object.keys(prices) as TickerId[]).forEach((t) => {
-    history[t] = [...history[t], prices[t]].slice(-24);
+    history[t] = [...history[t], prices[t]].slice(-52);
   });
 
   // company private valuation drift
@@ -228,7 +228,9 @@ export function beginWeek(state: GameState): GameState {
 export function resolveAfterAction(state: GameState): GameState {
   // Roll events, then advance week
   const rng = createRng(state.rngState);
-  const eventCount = rng.next() < 0.25 ? 2 : 1;
+  // More chaos: usually 1–2 events, sometimes a triple-threat week
+  const roll = rng.next();
+  const eventCount = roll < 0.12 ? 3 : roll < 0.45 ? 2 : 1;
   let s = { ...state, rngState: rng.state() };
   const { state: after, events } = rollEvents(s, eventCount);
   s = after;

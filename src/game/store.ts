@@ -72,6 +72,12 @@ export const useGame = create<Store>((set, get) => ({
       const raw = localStorage.getItem(SAVE_KEY);
       if (!raw) return false;
       const s = JSON.parse(raw) as GameState;
+      // migrate holdings avgCost
+      const tickers = Object.keys(s.market?.holdings ?? {}) as (keyof typeof s.market.holdings)[];
+      for (const t of tickers) {
+        const h = s.market.holdings[t] as { shares: number; avgCost?: number };
+        if (h && h.avgCost == null) h.avgCost = 0;
+      }
       set({ state: s, activeLocation: null, toast: 'Save loaded.' });
       return true;
     } catch {

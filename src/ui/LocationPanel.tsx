@@ -1,7 +1,8 @@
 import { useState, type ReactNode } from 'react';
 import { useGame } from '../game/store';
-import { TICKER_META, HOUSING_OPTIONS, type HousingTier, type TickerId } from '../game/types';
+import { HOUSING_OPTIONS, type HousingTier } from '../game/types';
 import { formatMoney } from '../game/rng';
+import { MarketPanel } from './MarketPanel';
 
 function PanelShell({
   title,
@@ -33,9 +34,10 @@ function PanelShell({
 export function LocationPanel() {
   const active = useGame((s) => s.activeLocation);
   const state = useGame((s) => s.state);
+  const close = useGame((s) => s.closeLocation);
   if (!active || !state) return null;
   if (active === 'company') return <CompanyPanel />;
-  if (active === 'market') return <MarketPanel />;
+  if (active === 'market') return <MarketPanel onClose={close} />;
   if (active === 'bank') return <BankPanel />;
   if (active === 'hospital') return <HospitalPanel />;
   if (active === 'realestate') return <RealEstatePanel />;
@@ -71,65 +73,6 @@ function CompanyPanel() {
         </button>
         <button type="button" onClick={doOSS}>
           Ship open source (rep ↑, sleep ↓)
-        </button>
-      </div>
-    </PanelShell>
-  );
-}
-
-function MarketPanel() {
-  const state = useGame((s) => s.state)!;
-  const doTrade = useGame((s) => s.doTrade);
-  const [ticker, setTicker] = useState<TickerId>('index');
-  const [amount, setAmount] = useState(500);
-
-  const tickers = Object.keys(TICKER_META) as TickerId[];
-
-  return (
-    <PanelShell title="Stock Market" sub="Bay Area brokerage — buy the rumor, sell the all-hands.">
-      <div className="list-block">
-        {tickers.map((t) => (
-          <div className="ticker-row" key={t}>
-            <span style={{ color: TICKER_META[t].color }}>{TICKER_META[t].name}</span>
-            <span>{formatMoney(state.market.prices[t])}</span>
-            <span className="muted">
-              {state.market.holdings[t].shares.toFixed(2)} sh
-            </span>
-          </div>
-        ))}
-      </div>
-      <div className="row" style={{ marginBottom: 8 }}>
-        <select
-          value={ticker}
-          onChange={(e) => setTicker(e.target.value as TickerId)}
-          style={{
-            background: '#0f1a14',
-            color: 'inherit',
-            border: '1px solid rgba(232,184,109,0.22)',
-            borderRadius: 4,
-            padding: '0.5rem',
-          }}
-        >
-          {tickers.map((t) => (
-            <option key={t} value={t}>
-              {TICKER_META[t].name}
-            </option>
-          ))}
-        </select>
-        <input
-          type="number"
-          min={1}
-          value={amount}
-          onChange={(e) => setAmount(Number(e.target.value))}
-          style={{ maxWidth: 120 }}
-        />
-      </div>
-      <div className="row">
-        <button type="button" className="primary" onClick={() => doTrade(ticker, 'buy', amount)}>
-          Buy ${amount}
-        </button>
-        <button type="button" onClick={() => doTrade(ticker, 'sell', amount)}>
-          Sell ${amount}
         </button>
       </div>
     </PanelShell>

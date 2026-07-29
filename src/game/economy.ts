@@ -38,18 +38,19 @@ export function createInitialState(name: string, seed = Date.now()): GameState {
         company: 0, // private until IPO
       },
       holdings: {
-        bigtech: { shares: 0 },
-        index: { shares: 0 },
-        meme: { shares: 0 },
-        crypto: { shares: 0 },
-        company: { shares: 0 },
+        bigtech: { shares: 0, avgCost: 0 },
+        index: { shares: 0, avgCost: 0 },
+        meme: { shares: 0, avgCost: 0 },
+        crypto: { shares: 0, avgCost: 0 },
+        company: { shares: 0, avgCost: 0 },
       },
       history: {
-        bigtech: [180],
-        index: [100],
-        meme: [42],
-        crypto: [65],
-        company: [0],
+        // Seed a short fake history so charts aren't empty on week 1
+        bigtech: [168, 172, 170, 175, 178, 180],
+        index: [94, 96, 97, 98, 99, 100],
+        meme: [38, 45, 40, 48, 44, 42],
+        crypto: [58, 72, 61, 70, 68, 65],
+        company: [0, 0, 0, 0, 0, 0],
       },
     },
     bank: {

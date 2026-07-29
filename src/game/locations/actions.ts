@@ -163,6 +163,12 @@ export function tradeStock(
   if (side === 'buy') {
     if (state.player.cash < amount) return { state, message: 'Not enough cash.' };
     const shares = amount / price;
+    const prev = state.market.holdings[ticker];
+    const newShares = prev.shares + shares;
+    const avgCost =
+      newShares <= 0
+        ? 0
+        : (prev.shares * prev.avgCost + shares * price) / newShares;
     const s: GameState = {
       ...state,
       player: { ...state.player, cash: Math.round(state.player.cash - amount) },
@@ -170,7 +176,7 @@ export function tradeStock(
         ...state.market,
         holdings: {
           ...state.market.holdings,
-          [ticker]: { shares: state.market.holdings[ticker].shares + shares },
+          [ticker]: { shares: newShares, avgCost },
         },
       },
     };
@@ -185,6 +191,8 @@ export function tradeStock(
   const sellValue = Math.min(amount, Math.floor(value));
   if (sellValue <= 0 || held <= 0) return { state, message: 'Nothing to sell.' };
   const sharesSold = sellValue / price;
+  const remaining = Math.max(0, held - sharesSold);
+  const avgCost = remaining <= 0.0001 ? 0 : state.market.holdings[ticker].avgCost;
   const s: GameState = {
     ...state,
     player: { ...state.player, cash: Math.round(state.player.cash + sellValue) },
@@ -192,7 +200,7 @@ export function tradeStock(
       ...state.market,
       holdings: {
         ...state.market.holdings,
-        [ticker]: { shares: Math.max(0, held - sharesSold) },
+        [ticker]: { shares: remaining <= 0.0001 ? 0 : remaining, avgCost },
       },
     },
   };

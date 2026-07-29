@@ -500,4 +500,257 @@ input[type='text'] {
   .title-screen .brand {
     font-size: clamp(3rem, 18vw, 4.5rem);
   }
+  .trade-panel {
+    width: min(96vw, 520px);
+  }
 }
+
+/* Weather badge */
+.weather-badge {
+  position: absolute;
+  top: 0.85rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.4rem 0.85rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(10px);
+  color: #fffef8;
+  font-size: 0.82rem;
+  font-weight: 600;
+  pointer-events: none;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.35);
+  animation: riseIn 0.8s ease;
+}
+
+.weather-dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: #ffe566;
+  box-shadow: 0 0 10px #ffe566;
+}
+
+/* Robinhood-ish trade panel */
+.trade-panel {
+  width: min(94vw, 440px);
+  max-height: min(90vh, 760px);
+  padding: 1rem 1.1rem 1.2rem;
+  background: rgba(12, 18, 28, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.trade-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 0.35rem;
+}
+
+.trade-title {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: -0.01em;
+}
+
+.trade-price {
+  font-size: 1.85rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  margin-top: 0.15rem;
+}
+
+.trade-price span {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+button.ghost {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.15);
+  padding: 0.35rem 0.65rem;
+  font-size: 0.8rem;
+}
+
+.sparkline {
+  display: block;
+  margin: 0.25rem 0 0.75rem;
+}
+
+.spark-empty {
+  height: 120px;
+  display: grid;
+  place-items: center;
+  font-size: 0.85rem;
+}
+
+.ticker-pills {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+}
+
+.ticker-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  padding: 0.45rem 0.4rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 0.68rem;
+  min-width: 0;
+}
+
+.ticker-pill strong {
+  font-size: 0.78rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.ticker-pill.up strong {
+  color: #00c805;
+}
+.ticker-pill.down strong {
+  color: #ff5000;
+}
+.ticker-pill.active {
+  border-color: rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.holdings-card {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 10px;
+  padding: 0.65rem 0.8rem;
+  margin-bottom: 0.85rem;
+}
+
+.holdings-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.88rem;
+  padding: 0.28rem 0;
+  color: var(--text-dim);
+}
+
+.holdings-row strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.trade-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+}
+
+.trade-tabs .tab {
+  border-radius: 8px;
+  font-weight: 700;
+  padding: 0.65rem;
+}
+
+.trade-tabs .tab.buy.active {
+  background: #00c805;
+  color: #04140a;
+  border-color: transparent;
+}
+
+.trade-tabs .tab.sell.active {
+  background: #ff5000;
+  color: #1a0800;
+  border-color: transparent;
+}
+
+.trade-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  margin-bottom: 0.55rem;
+}
+
+.pct-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.35rem;
+  margin-bottom: 0.55rem;
+}
+
+.pct-row button {
+  padding: 0.45rem;
+  font-size: 0.8rem;
+  border-radius: 8px;
+}
+
+.pct-row button.active {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.trade-limits {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  margin-bottom: 0.75rem;
+}
+
+.trade-submit {
+  width: 100%;
+  padding: 0.85rem;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 1rem;
+  border: none;
+}
+
+.trade-submit.buy {
+  background: #00c805;
+  color: #04140a;
+}
+
+.trade-submit.sell {
+  background: #ff5000;
+  color: #1a0800;
+}
+
+.trade-submit:disabled {
+  opacity: 0.4;
+}
+
+.good {
+  color: #00c805 !important;
+}
+.bad {
+  color: #ff5000 !important;
+}
+
+.title-screen {
+  background:
+    linear-gradient(180deg, transparent 10%, rgba(15, 26, 40, 0.35) 45%, rgba(12, 18, 32, 0.92) 100%);
+}
+
+.panel {
+  background: rgba(16, 28, 40, 0.92);
+}
+
+.hud {
+  background: linear-gradient(180deg, rgba(12, 22, 36, 0.72), transparent);
+}
+

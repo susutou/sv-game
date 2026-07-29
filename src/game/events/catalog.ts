@@ -2,6 +2,7 @@ import type { EventResult, GameState } from '../types';
 import { createRng, pickWeighted, clamp } from '../rng';
 import { CAREER_PAY, CAREER_TITLES } from '../types';
 import { applyDeltas, equityValue, pushLog } from '../economy';
+import { EXTRA_EVENTS } from './extraEvents';
 
 export type EventDef = {
   id: string;
@@ -231,13 +232,19 @@ export const EVENT_DEFS: EventDef[] = [
       };
       // convert vested equity to tradable shares (simplified)
       const shares = Math.floor(equityValue(s) / Math.max(1, price));
+      const prev = state.market.holdings.company;
+      const newShares = prev.shares + shares;
+      const avgCost =
+        newShares <= 0
+          ? 0
+          : (prev.shares * (prev.avgCost || 0) + shares * price) / newShares;
       state = {
         ...state,
         market: {
           ...state.market,
           holdings: {
             ...state.market.holdings,
-            company: { shares: state.market.holdings.company.shares + shares },
+            company: { shares: newShares, avgCost },
           },
         },
         company: { ...state.company, equityPercent: 0, vestedPercent: 0 },
@@ -630,6 +637,7 @@ export const EVENT_DEFS: EventDef[] = [
       };
     },
   },
+  ...EXTRA_EVENTS,
 ];
 
 export function rollEvents(state: GameState, count = 1): { state: GameState; events: EventResult[] } {
