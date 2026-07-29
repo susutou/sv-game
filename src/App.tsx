@@ -4,6 +4,7 @@ import { TitleScreen } from './ui/TitleScreen';
 import { EventModal } from './ui/EventModal';
 import { EndScreen } from './ui/EndScreen';
 import { LocationPanel } from './ui/LocationPanel';
+import { CharacterPanel } from './ui/CharacterPanel';
 import { Toast, LogDock, LocationHint } from './ui/Chrome';
 
 export default function App() {
@@ -17,6 +18,7 @@ export default function App() {
         <LogDock />
         <Toast />
         <LocationPanel />
+        <CharacterPanel />
         <EventModal />
         <EndScreen />
       </div>

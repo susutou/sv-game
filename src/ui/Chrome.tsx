@@ -34,14 +34,15 @@ export function LogDock() {
 export function LocationHint() {
   const state = useGame((s) => s.state);
   const activeLocation = useGame((s) => s.activeLocation);
+  const activeCharacter = useGame((s) => s.activeCharacter);
   if (!state || state.phase === 'title' || state.phase === 'event') return null;
   if (state.phase === 'gameover' || state.phase === 'victory') return null;
-  if (activeLocation) return null;
+  if (activeLocation || activeCharacter) return null;
   return (
     <div className="location-hint">
       {state.forcedHospital
         ? 'Health below 50% — click the Hospital. Treatment is mandatory this week.'
-        : 'Click a building: Company · Market · Bank · Hospital · Real Estate. One action ends the week.'}
+        : 'Click a building or person (Boss, Colleague, Friend, Partner). One action ends the week.'}
     </div>
   );
 }

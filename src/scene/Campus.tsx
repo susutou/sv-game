@@ -12,6 +12,9 @@ import * as THREE from 'three';
 import type { LocationId } from '../game/types';
 import { useGame } from '../game/store';
 import { DEFAULT_WEATHER, fetchValleyWeather, type WeatherTheme } from './weather';
+import { CharacterNpcs } from './Characters';
+
+const BUILDING_SCALE = 0.58;
 
 function useInteractive(id: LocationId) {
   const open = useGame((s) => s.openLocation);
@@ -26,7 +29,16 @@ function useInteractive(id: LocationId) {
     phase === 'title' ||
     !phase;
   return {
-    dim: !!(locked || phase === 'event' || phase === 'gameover' || phase === 'victory') && !!phase && phase !== 'title',
+    dim:
+      !!(
+        locked ||
+        phase === 'event' ||
+        phase === 'gameover' ||
+        phase === 'victory' ||
+        phase === 'character'
+      ) &&
+      !!phase &&
+      phase !== 'title',
     onClick: (e: { stopPropagation: () => void }) => {
       e.stopPropagation();
       if (blocked) return;
@@ -475,11 +487,12 @@ function EngineerAvatar() {
   const ref = useRef<THREE.Group>(null);
   const targets = useMemo(
     () => [
-      [-3.2, 0, 2.3],
-      [2.9, 0, 3.3],
-      [0.2, 0, -1.3],
-      [-4.6, 0, -0.4],
-      [4.4, 0, 0.4],
+      [-5.5, 0, 3.5],
+      [5.0, 0, 4.5],
+      [0.4, 0, -4.0],
+      [-7.5, 0, -1.5],
+      [7.2, 0, -0.5],
+      [2.2, 0, 5.5],
     ],
     [],
   );
@@ -548,26 +561,32 @@ function Rain({ active }: { active: boolean }) {
 function Nature({ theme }: { theme: WeatherTheme }) {
   return (
     <>
-      {/* distant hills */}
-      <mesh position={[-11, 0.9, -8]} castShadow>
-        <sphereGeometry args={[3.6, 32, 20]} />
+      {/* distant hills — bigger peninsula */}
+      <mesh position={[-18, 1.4, -14]} castShadow>
+        <sphereGeometry args={[5.5, 32, 20]} />
         <meshStandardMaterial color="#4a6b52" roughness={0.95} />
       </mesh>
-      <mesh position={[12, 1.3, -7]} castShadow>
-        <sphereGeometry args={[4.2, 32, 20]} />
+      <mesh position={[19, 1.8, -12]} castShadow>
+        <sphereGeometry args={[6.2, 32, 20]} />
         <meshStandardMaterial color="#557a5c" roughness={0.95} />
       </mesh>
-      <mesh position={[-5, 0.6, -10]} castShadow>
-        <sphereGeometry args={[2.4, 28, 16]} />
+      <mesh position={[-8, 0.9, -16]} castShadow>
+        <sphereGeometry args={[3.6, 28, 16]} />
         <meshStandardMaterial color="#5d8260" roughness={0.95} />
+      </mesh>
+      <mesh position={[10, 1.0, -15]} castShadow>
+        <sphereGeometry args={[4.0, 28, 16]} />
+        <meshStandardMaterial color="#4f7356" roughness={0.95} />
       </mesh>
       {/* trees */}
       {[
-        [-7.2, 3.2],
-        [6.8, 4.2],
-        [-2.2, 5.8],
-        [8.2, -2.2],
-        [-8.5, -3],
+        [-12, 5],
+        [11, 6.5],
+        [-4, 9],
+        [13, -4],
+        [-14, -5],
+        [8, 9],
+        [-10, 8],
       ].map(([x, z], i) => (
         <group key={i} position={[x, 0, z]}>
           <mesh castShadow position={[0, 1.0, 0]}>
@@ -582,11 +601,11 @@ function Nature({ theme }: { theme: WeatherTheme }) {
       ))}
       {theme.cloudOpacity > 0.2 && (
         <>
-          <Cloud position={[-5, 8, -6]} opacity={theme.cloudOpacity * 0.55} speed={0.12} segments={20} />
-          <Cloud position={[6, 9, -8]} opacity={theme.cloudOpacity * 0.45} speed={0.08} segments={24} />
+          <Cloud position={[-8, 10, -10]} opacity={theme.cloudOpacity * 0.55} speed={0.12} segments={20} />
+          <Cloud position={[9, 11, -12]} opacity={theme.cloudOpacity * 0.45} speed={0.08} segments={24} />
         </>
       )}
-      {theme.showStars && <Stars radius={50} depth={40} count={1200} factor={2.5} fade speed={0.4} />}
+      {theme.showStars && <Stars radius={60} depth={45} count={1400} factor={2.5} fade speed={0.4} />}
       <Rain active={theme.showRain} />
     </>
   );
@@ -633,12 +652,12 @@ function Campus({ theme }: { theme: WeatherTheme }) {
 
       {/* ground */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
-        <circleGeometry args={[22, 64]} />
+        <circleGeometry args={[36, 72]} />
         <meshStandardMaterial color={theme.ground} roughness={0.95} metalness={0.02} />
       </mesh>
       {/* bay water */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[12, -0.04, 8]} receiveShadow>
-        <circleGeometry args={[12, 48]} />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[18, -0.04, 12]} receiveShadow>
+        <circleGeometry args={[18, 48]} />
         <meshPhysicalMaterial
           color={theme.water}
           roughness={0.15}
@@ -647,25 +666,40 @@ function Campus({ theme }: { theme: WeatherTheme }) {
           thickness={0.5}
         />
       </mesh>
-      {/* asphalt path */}
+      {/* asphalt path network */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.015, 0.4]} receiveShadow>
-        <planeGeometry args={[2.0, 14]} />
+        <planeGeometry args={[2.0, 22]} />
+        <meshStandardMaterial color="#4a4a48" roughness={0.9} />
+      </mesh>
+      <mesh rotation={[-Math.PI / 2, 0, Math.PI / 2]} position={[0, 0.015, 1.5]} receiveShadow>
+        <planeGeometry args={[1.6, 18]} />
         <meshStandardMaterial color="#4a4a48" roughness={0.9} />
       </mesh>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0.4]}>
-        <planeGeometry args={[0.08, 13]} />
+        <planeGeometry args={[0.08, 20]} />
         <meshStandardMaterial color="#c4b48a" roughness={0.7} />
       </mesh>
 
-      <OfficeBuilding position={[-3.4, 0, 1.0]} dim={company.dim} />
-      <MarketBuilding position={[3.0, 0, 2.0]} dim={market.dim} />
-      <BankBuilding position={[0.1, 0, -2.6]} dim={bank.dim} />
-      <HospitalBuilding position={[-4.8, 0, -1.8]} dim={hospital.dim} />
-      <RealtyHouse position={[4.6, 0, -1.0]} dim={realty.dim} />
+      <group scale={BUILDING_SCALE} position={[-5.6, 0, 1.6]}>
+        <OfficeBuilding position={[0, 0, 0]} dim={company.dim} />
+      </group>
+      <group scale={BUILDING_SCALE} position={[5.4, 0, 3.2]}>
+        <MarketBuilding position={[0, 0, 0]} dim={market.dim} />
+      </group>
+      <group scale={BUILDING_SCALE} position={[0.2, 0, -5.2]}>
+        <BankBuilding position={[0, 0, 0]} dim={bank.dim} />
+      </group>
+      <group scale={BUILDING_SCALE} position={[-8.2, 0, -3.0]}>
+        <HospitalBuilding position={[0, 0, 0]} dim={hospital.dim} />
+      </group>
+      <group scale={BUILDING_SCALE} position={[8.0, 0, -2.0]}>
+        <RealtyHouse position={[0, 0, 0]} dim={realty.dim} />
+      </group>
 
       {!showTitle && <EngineerAvatar />}
+      {!showTitle && <CharacterNpcs />}
       <Nature theme={theme} />
-      <ContactShadows opacity={0.45} scale={32} blur={2.8} far={12} color="#1a2420" />
+      <ContactShadows opacity={0.45} scale={48} blur={2.8} far={16} color="#1a2420" />
       <PerspectiveCam />
     </>
   );
@@ -675,12 +709,12 @@ function PerspectiveCam() {
   const phase = useGame((s) => s.state?.phase);
   useFrame(({ camera, clock }) => {
     const title = !phase || phase === 'title';
-    const targetY = title ? 5.8 : 7.6;
-    const targetZ = title ? 11.5 : 14;
+    const targetY = title ? 8.5 : 11.5;
+    const targetZ = title ? 18 : 22;
     camera.position.y = THREE.MathUtils.lerp(camera.position.y, targetY, 0.03);
     camera.position.z = THREE.MathUtils.lerp(camera.position.z, targetZ, 0.03);
-    camera.position.x = Math.sin(clock.elapsedTime * 0.1) * (title ? 0.35 : 0.7);
-    camera.lookAt(0, 1.0, 0);
+    camera.position.x = Math.sin(clock.elapsedTime * 0.08) * (title ? 0.5 : 1.1);
+    camera.lookAt(0, 0.8, 0);
   });
   return null;
 }
@@ -707,7 +741,7 @@ export function Scene() {
       <Canvas
         shadows
         dpr={[1, 1.75]}
-        camera={{ position: [0, 5.8, 11.5], fov: 40, near: 0.1, far: 100 }}
+        camera={{ position: [0, 8.5, 18], fov: 40, near: 0.1, far: 120 }}
         gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping }}
         onCreated={({ gl }) => {
           gl.toneMappingExposure = 1.05;

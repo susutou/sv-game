@@ -1,6 +1,7 @@
 import type { GameState, TickerId } from './types';
 import { CAREER_PAY, CAREER_TITLES, HOUSING_OPTIONS } from './types';
 import { clamp } from './rng';
+import { createCharactersState } from './characters';
 
 export function createInitialState(name: string, seed = Date.now()): GameState {
   return {
@@ -73,6 +74,7 @@ export function createInitialState(name: string, seed = Date.now()): GameState {
       partnerName: null,
       weeksTogether: 0,
     },
+    characters: createCharactersState(),
     flags: {
       survivedProbation: false,
       housePoor: false,

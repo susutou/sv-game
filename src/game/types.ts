@@ -23,6 +23,8 @@ export type LocationId =
   | 'hospital'
   | 'realestate';
 
+export type CharacterId = 'girlfriend' | 'wife' | 'colleague' | 'boss' | 'friend';
+
 export type HousingTier = 'shared' | 'studio' | 'condo' | 'house' | 'mansion';
 
 export type GamePhase =
@@ -30,6 +32,7 @@ export type GamePhase =
   | 'playing'
   | 'event'
   | 'location'
+  | 'character'
   | 'hospital-forced'
   | 'week-summary'
   | 'gameover'
@@ -88,6 +91,14 @@ export interface RelationshipState {
   weeksTogether: number;
 }
 
+export interface CharacterBond {
+  name: string;
+  affinity: number;
+  met: boolean;
+}
+
+export type CharactersState = Record<CharacterId, CharacterBond>;
+
 export interface PlayerState {
   name: string;
   cash: number;
@@ -135,6 +146,7 @@ export interface GameState {
   bank: BankState;
   housing: HousingState;
   relationship: RelationshipState;
+  characters: CharactersState;
   flags: GameFlags;
   pendingEvents: EventResult[];
   lastSummary: string[];

@@ -3,6 +3,7 @@ import { createRng, pickWeighted, clamp } from '../rng';
 import { CAREER_PAY, CAREER_TITLES } from '../types';
 import { applyDeltas, equityValue, pushLog } from '../economy';
 import { EXTRA_EVENTS } from './extraEvents';
+import { CHARACTER_EVENTS } from './characterEvents';
 
 export type EventDef = {
   id: string;
@@ -394,9 +395,17 @@ export const EVENT_DEFS: EventDef[] = [
     apply: (s, rng) => {
       const partner = PARTNERS[Math.floor(rng.next() * PARTNERS.length)];
       const deltas = { cash: -120, health: 4, stress: -8, reputation: 2 };
-      const state = {
+      let state = {
         ...applyDeltas(s, deltas),
         relationship: { status: 'dating' as const, partnerName: partner, weeksTogether: 0 },
+      };
+      state = {
+        ...state,
+        characters: {
+          ...state.characters,
+          girlfriend: { name: partner, affinity: 60, met: true },
+          wife: { ...state.characters.wife, name: partner },
+        },
       };
       return {
         state,
@@ -439,10 +448,19 @@ export const EVENT_DEFS: EventDef[] = [
     apply: (s) => {
       const cost = -12000;
       const deltas = { cash: cost, reputation: 8, stress: -5, health: 2 };
+      const partner = s.relationship.partnerName ?? s.characters.girlfriend.name;
       const state = {
         ...applyDeltas(s, deltas),
         relationship: { ...s.relationship, status: 'married' as const },
         flags: { ...s.flags, marriedOnce: true },
+        characters: {
+          ...s.characters,
+          wife: {
+            name: partner,
+            affinity: Math.max(s.characters.girlfriend.affinity, s.characters.wife.affinity, 70),
+            met: true,
+          },
+        },
       };
       return {
         state,
@@ -468,6 +486,11 @@ export const EVENT_DEFS: EventDef[] = [
       const state = {
         ...applyDeltas(s, deltas),
         relationship: { status: 'divorced' as const, partnerName: null, weeksTogether: 0 },
+        characters: {
+          ...s.characters,
+          wife: { ...s.characters.wife, affinity: 15, met: true },
+          girlfriend: { ...s.characters.girlfriend, affinity: 20, met: false },
+        },
       };
       return {
         state,
@@ -638,6 +661,7 @@ export const EVENT_DEFS: EventDef[] = [
     },
   },
   ...EXTRA_EVENTS,
+  ...CHARACTER_EVENTS,
 ];
 
 export function rollEvents(state: GameState, count = 1): { state: GameState; events: EventResult[] } {
