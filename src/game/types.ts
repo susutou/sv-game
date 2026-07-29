@@ -1,4 +1,4 @@
-/** Valley Rise — core game types */
+/** Valley Rise — open-world RPG core types */
 
 export type CareerLevel =
   | 'junior'
@@ -6,221 +6,140 @@ export type CareerLevel =
   | 'senior'
   | 'staff'
   | 'principal'
-  | 'founder'
   | 'unemployed';
 
-export type RelationshipStatus =
-  | 'single'
-  | 'dating'
-  | 'engaged'
-  | 'married'
-  | 'divorced';
-
-export type LocationId =
-  | 'company'
-  | 'market'
-  | 'bank'
-  | 'hospital'
-  | 'realestate';
-
-export type CharacterId = 'girlfriend' | 'wife' | 'colleague' | 'boss' | 'friend';
-
-export type HousingTier = 'shared' | 'studio' | 'condo' | 'house' | 'mansion';
-
-export type GamePhase =
-  | 'title'
-  | 'playing'
-  | 'event'
-  | 'location'
-  | 'character'
-  | 'hospital-forced'
-  | 'week-summary'
-  | 'gameover'
-  | 'victory';
+export type RelationshipStatus = 'single' | 'dating' | 'engaged' | 'married' | 'divorced';
 
 export type TickerId = 'bigtech' | 'index' | 'meme' | 'crypto' | 'company';
 
-export interface StockHolding {
+export type PhoneAppId = 'home' | 'trade' | 'wallet' | 'equity' | 'news' | 'messages';
+
+export type PoiId = 'company' | 'bank' | 'hospital' | 'housing' | 'cafe' | 'park' | 'market';
+
+export type NpcId = 'boss' | 'colleague' | 'friend' | 'partner';
+
+export interface Holding {
   shares: number;
-  /** Average cost basis per share (for unrealized P&L). */
   avgCost: number;
 }
 
 export interface MarketState {
   prices: Record<TickerId, number>;
-  holdings: Record<TickerId, StockHolding>;
+  holdings: Record<TickerId, Holding>;
   history: Record<TickerId, number[]>;
 }
 
 export interface CompanyState {
   name: string;
-  valuation: number; // millions
-  stage: 'seed' | 'seriesA' | 'seriesB' | 'seriesC' | 'ipo' | 'acquired' | 'dead';
+  valuation: number;
+  stage: 'seriesA' | 'seriesB' | 'seriesC' | 'ipo' | 'acquired' | 'dead';
   employed: boolean;
   title: string;
   level: CareerLevel;
   weeklyPay: number;
   equityPercent: number;
-  vestedPercent: number; // 0-1 of equity vested
+  vestedPercent: number;
   weeksEmployed: number;
   cliffWeeks: number;
   vestWeeks: number;
-  promoCooldown: number;
 }
 
-export interface HousingState {
-  tier: HousingTier;
-  owned: boolean;
-  weeklyCost: number; // rent or mortgage
-  propertyValue: number;
-  mortgageBalance: number;
-  label: string;
-}
-
-export interface BankState {
-  savings: number;
-  savingsApyWeekly: number;
-  studentLoan: number;
-  personalLoan: number;
-  personalLoanRate: number;
-}
-
-export interface RelationshipState {
-  status: RelationshipStatus;
-  partnerName: string | null;
-  weeksTogether: number;
-}
-
-export interface CharacterBond {
-  name: string;
-  affinity: number;
-  met: boolean;
-}
-
-export type CharactersState = Record<CharacterId, CharacterBond>;
-
-export interface PlayerState {
+export interface PlayerVitals {
   name: string;
   cash: number;
   health: number;
   reputation: number;
-  stress: number; // 0-100 hidden
+  stress: number;
 }
 
-export interface EventResult {
-  id: string;
-  title: string;
-  description: string;
-  deltas: Partial<{
-    cash: number;
-    health: number;
-    reputation: number;
-    stress: number;
-  }>;
-  flags?: Partial<GameFlags>;
+export interface TimeState {
+  day: number; // 1..730-ish
+  maxDays: number;
+  hour: number; // 0..23.99
+  paused: boolean;
+}
+
+export interface HousingState {
+  label: string;
+  dailyRent: number;
+  owned: boolean;
+  propertyValue: number;
+}
+
+export interface BankState {
+  savings: number;
+  studentLoan: number;
+  personalLoan: number;
+}
+
+export interface NpcBond {
+  name: string;
+  affinity: number;
 }
 
 export interface GameFlags {
+  tutorialDone: boolean;
+  forcedHospital: boolean;
   survivedProbation: boolean;
-  housePoor: boolean;
   paperMillionaire: boolean;
   unicornRider: boolean;
-  laidOffOnce: boolean;
-  marriedOnce: boolean;
-  ipoHappened: boolean;
 }
 
-export interface LogEntry {
-  week: number;
-  text: string;
-  kind: 'info' | 'good' | 'bad' | 'event';
+export interface NewsItem {
+  id: string;
+  day: number;
+  title: string;
+  body: string;
+}
+
+export interface MessageItem {
+  id: string;
+  from: string;
+  body: string;
+  day: number;
+  read: boolean;
 }
 
 export interface GameState {
-  week: number;
-  maxWeeks: number;
-  phase: GamePhase;
-  player: PlayerState;
+  vitals: PlayerVitals;
+  time: TimeState;
   company: CompanyState;
   market: MarketState;
   bank: BankState;
   housing: HousingState;
-  relationship: RelationshipState;
-  characters: CharactersState;
+  relationship: { status: RelationshipStatus; partnerName: string | null };
+  npcs: Record<NpcId, NpcBond>;
   flags: GameFlags;
-  pendingEvents: EventResult[];
-  lastSummary: string[];
-  log: LogEntry[];
-  forcedHospital: boolean;
-  gameOverReason: string | null;
-  titles: string[];
-  seed: number;
-  rngState: number;
+  news: NewsItem[];
+  messages: MessageItem[];
+  log: string[];
+  position: [number, number, number];
+  gameOver: string | null;
+  victory: boolean;
 }
 
-export const TICKER_META: Record<
-  TickerId,
-  { name: string; color: string }
-> = {
-  bigtech: { name: 'FAANG Basket', color: '#4a7c59' },
-  index: { name: 'S&P Shadow ETF', color: '#3d5a80' },
-  meme: { name: 'Meme / Growth', color: '#c44900' },
-  crypto: { name: 'Crypto Index', color: '#e8b86d' },
-  company: { name: 'Your Co (private)', color: '#7eb8a2' },
-};
-
-export const HOUSING_OPTIONS: Record<
-  HousingTier,
-  { label: string; weeklyRent: number; buyPrice: number; weeklyMortgage: number }
-> = {
-  shared: {
-    label: 'Shared East Bay room',
-    weeklyRent: 700,
-    buyPrice: 0,
-    weeklyMortgage: 0,
-  },
-  studio: {
-    label: 'South Bay studio',
-    weeklyRent: 1100,
-    buyPrice: 420000,
-    weeklyMortgage: 1800,
-  },
-  condo: {
-    label: 'Peninsula condo',
-    weeklyRent: 1600,
-    buyPrice: 780000,
-    weeklyMortgage: 3200,
-  },
-  house: {
-    label: 'Palo Alto bungalow',
-    weeklyRent: 2800,
-    buyPrice: 1600000,
-    weeklyMortgage: 6200,
-  },
-  mansion: {
-    label: 'Hillsborough estate',
-    weeklyRent: 6000,
-    buyPrice: 4500000,
-    weeklyMortgage: 16000,
-  },
+export const TICKER_META: Record<TickerId, { name: string; symbol: string; color: string }> = {
+  bigtech: { name: 'FAANG Basket', symbol: 'FNG', color: '#4a7c59' },
+  index: { name: 'S&P Shadow', symbol: 'SPYx', color: '#3d5a80' },
+  meme: { name: 'Meme Growth', symbol: 'YOLO', color: '#c44900' },
+  crypto: { name: 'Crypto Index', symbol: 'CRYX', color: '#e8b86d' },
+  company: { name: 'Nimbus (priv)', symbol: 'NMBS', color: '#7eb8a2' },
 };
 
 export const CAREER_PAY: Record<CareerLevel, number> = {
-  junior: 1800,
-  mid: 2600,
-  senior: 3600,
-  staff: 4800,
-  principal: 6200,
-  founder: 4000,
+  junior: 257, // ~daily take-home abstracted from ~1800/wk
+  mid: 371,
+  senior: 514,
+  staff: 685,
+  principal: 885,
   unemployed: 0,
 };
 
-export const CAREER_TITLES: Record<CareerLevel, string> = {
+export const CAREER_TITLE: Record<CareerLevel, string> = {
   junior: 'Junior Software Engineer',
   mid: 'Software Engineer',
   senior: 'Senior Software Engineer',
   staff: 'Staff Engineer',
   principal: 'Principal Engineer',
-  founder: 'Co-Founder',
   unemployed: 'Between Jobs',
 };

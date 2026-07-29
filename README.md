@@ -1,8 +1,6 @@
 # Valley Rise
 
-A **2.5D pixel open-world RPG** about surviving Silicon Valley as a new grad.
-
-Inspired by [北京浮生记](https://github.com/chrisguo/beijing_fushengji).
+A **web-based 3D open-world RPG**: you are a new college grad at a Silicon Valley startup. Walk the peninsula, ship code, climb reputation — and open your **phone** to trade stocks and track equity.
 
 ## Play
 
@@ -13,27 +11,29 @@ npm run dev
 
 ## Controls
 
-| Key | Action |
-|-----|--------|
-| **WASD / Arrows** | Walk the peninsula |
-| **E / Enter** | Enter a building or talk to someone |
-| Click UI | Choose weekly actions inside menus |
+| Input | Action |
+|-------|--------|
+| **WASD / Arrows** | Move |
+| **Shift** | Sprint |
+| **E / Click** | Interact with buildings & people |
+| **P** or **Phone** button | Open phone |
 
-## Loop
+## Phone apps
 
-- Specs: **Money**, **Reputation**, **Health**
-- Explore freely; each meaningful action advances **one week**
-- Random events fire (career, markets, relationships, chaos)
-- Health &lt; 50% → you must reach the **Hospital**
-- Last **104 weeks** and chase glory titles
+- **Trade** — buy/sell FAANG, index, meme, crypto (charts, unrealized P&L, max sell)
+- **Equity** — startup grant, vesting, paper value
+- **Wallet** — cash, savings, brokerage, loans, net worth
+- **News** / **Messages** — Valley chatter
 
-## World
+Exchange Hall also deep-links into Trade.
 
-- Open map: campus, exchange, bank, clinic, realty, bay shoreline
-- People: Girlfriend / Wife, Colleague, Boss, Friend (affinity system)
-- Robinhood-style stock UI with charts & unrealized P&amp;L
-- Weather-tinted skies from live Mountain View conditions
+## Systems
+
+- Money · Reputation · Health (hospital forced when HP &lt; 50%)
+- Work / crunch at Nimbus, bank, housing sleep, cafe dating, park recovery
+- NPCs: Boss, Colleague, Friend, Partner
+- Day/night cycle; survive up to 365 days
 
 ## Stack
 
-Vite · React · TypeScript · Canvas pixel renderer · Zustand
+Vite · React · TypeScript · Three.js (R3F) · Zustand
