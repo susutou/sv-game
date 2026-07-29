@@ -22,7 +22,7 @@ export function LogDock() {
   if (!state || state.phase === 'title') return null;
   return (
     <div className="log-dock" aria-label="Event log">
-      {state.log.slice(0, 12).map((e, i) => (
+      {state.log.slice(0, 10).map((e, i) => (
         <div key={`${e.week}-${i}`} className={e.kind}>
           <strong>W{e.week}</strong> {e.text}
         </div>
@@ -38,11 +38,11 @@ export function LocationHint() {
   if (!state || state.phase === 'title' || state.phase === 'event') return null;
   if (state.phase === 'gameover' || state.phase === 'victory') return null;
   if (activeLocation || activeCharacter) return null;
+  // PixelWorld shows its own proximity prompt — keep a light tip only early game
+  if (state.week > 3) return null;
   return (
     <div className="location-hint">
-      {state.forcedHospital
-        ? 'Health below 50% — click the Hospital. Treatment is mandatory this week.'
-        : 'Click a building or person (Boss, Colleague, Friend, Partner). One action ends the week.'}
+      Explore the peninsula. Walk up to buildings or people and press <kbd>E</kbd>.
     </div>
   );
 }

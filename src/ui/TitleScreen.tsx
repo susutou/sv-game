@@ -15,28 +15,35 @@ export function TitleScreen() {
   if (state && state.phase !== 'title') return null;
 
   return (
-    <div className="title-screen">
-      <h1 className="brand">Valley Rise</h1>
-      <p className="tagline">
-        Fresh out of college. One Series A desk. One hundred four weeks to turn salary,
-        equity, and nerve into Silicon Valley glory — or burn out trying.
-      </p>
-      <div className="title-actions">
-        <input
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Your name"
-          aria-label="Character name"
-        />
-        <button type="button" className="primary" onClick={() => newGame(name)}>
-          Start Career
-        </button>
-        {hasSave && (
-          <button type="button" onClick={() => loadGame()}>
-            Continue
+    <div className="title-screen pixel-title">
+      <div className="pixel-title-card">
+        <p className="pixel-eyebrow">OPEN WORLD · PIXEL RPG</p>
+        <h1 className="brand">Valley Rise</h1>
+        <p className="tagline">
+          Fresh out of college. One peninsula. One hundred four weeks.
+          Walk the Valley, talk to people, chase glory — or burn out trying.
+        </p>
+        <div className="title-actions">
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Your name"
+            aria-label="Character name"
+            maxLength={24}
+          />
+          <button type="button" className="primary" onClick={() => newGame(name)}>
+            New Game
           </button>
-        )}
+          {hasSave && (
+            <button type="button" onClick={() => loadGame()}>
+              Continue
+            </button>
+          )}
+        </div>
+        <p className="pixel-howto muted">
+          WASD / Arrows to walk · E to talk / enter · Survive 104 weeks
+        </p>
       </div>
     </div>
   );

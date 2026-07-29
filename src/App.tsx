@@ -1,4 +1,4 @@
-import { Scene } from './scene/Campus';
+import { PixelWorld } from './world/PixelWorld';
 import { Hud } from './ui/Hud';
 import { TitleScreen } from './ui/TitleScreen';
 import { EventModal } from './ui/EventModal';
@@ -9,8 +9,8 @@ import { Toast, LogDock, LocationHint } from './ui/Chrome';
 
 export default function App() {
   return (
-    <div className="app-shell">
-      <Scene />
+    <div className="app-shell pixel-rpg">
+      <PixelWorld />
       <div className="ui-layer">
         <TitleScreen />
         <Hud />

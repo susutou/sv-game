@@ -1,20 +1,20 @@
 :root {
-  --bg-deep: #0f1a14;
-  --bg-mid: #1a2f23;
-  --bg-panel: rgba(18, 32, 26, 0.88);
+  --bg-deep: #0b1220;
+  --bg-mid: #152238;
+  --bg-panel: rgba(12, 20, 36, 0.94);
   --fog: #c5d5c8;
   --sand: #e8dcc8;
-  --gold: #e8b86d;
-  --gold-dim: #c49a55;
-  --mint: #7eb8a2;
-  --mint-dim: #5a8f7b;
-  --danger: #c45c4a;
-  --ok: #7eb8a2;
-  --text: #f2ebe0;
-  --text-dim: #a8b5ab;
-  --line: rgba(232, 184, 109, 0.22);
-  --font-display: 'Instrument Serif', Georgia, serif;
-  --font-body: 'DM Sans', system-ui, sans-serif;
+  --gold: #ffd76a;
+  --gold-dim: #e0b84a;
+  --mint: #5ee2a0;
+  --mint-dim: #3cb872;
+  --danger: #ff6b5a;
+  --ok: #5ee2a0;
+  --text: #f4f1ea;
+  --text-dim: #9aabbc;
+  --line: rgba(255, 215, 106, 0.28);
+  --font-display: 'Pixelify Sans', 'Courier New', monospace;
+  --font-body: 'Pixelify Sans', 'DM Sans', system-ui, sans-serif;
   color: var(--text);
   font-family: var(--font-body);
   font-synthesis: none;
@@ -46,33 +46,36 @@ select {
 
 button {
   cursor: pointer;
-  border: 1px solid var(--line);
-  background: rgba(126, 184, 162, 0.12);
+  border: 3px solid #1a2030;
+  background: #2a3a55;
   color: var(--text);
-  border-radius: 4px;
+  border-radius: 0;
   padding: 0.55rem 0.9rem;
-  transition: background 0.2s, border-color 0.2s, transform 0.15s;
+  box-shadow: 3px 3px 0 #0a1020;
+  image-rendering: pixelated;
+  transition: transform 0.1s, background 0.1s;
 }
 
 button:hover {
-  background: rgba(232, 184, 109, 0.18);
+  background: #3a4e72;
   border-color: var(--gold-dim);
 }
 
 button:active {
-  transform: translateY(1px);
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 #0a1020;
 }
 
 button.primary {
-  background: linear-gradient(135deg, var(--gold-dim), var(--gold));
+  background: var(--gold);
   color: #1a1814;
-  border-color: transparent;
-  font-weight: 600;
+  border-color: #1a1814;
+  font-weight: 700;
 }
 
 button.danger {
-  background: rgba(196, 92, 74, 0.2);
-  border-color: rgba(196, 92, 74, 0.45);
+  background: #6a3030;
+  border-color: #1a1814;
 }
 
 button:disabled {
@@ -788,5 +791,213 @@ button.ghost {
 
 .character-panel .panel-actions button {
   text-align: left;
+}
+
+/* ===== Pixel open-world RPG chrome ===== */
+.pixel-world {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: #0b1220;
+}
+
+.pixel-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.pixel-chrome {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.pixel-weather {
+  position: absolute;
+  top: 0.75rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #121a2a;
+  border: 3px solid #1a2030;
+  box-shadow: 3px 3px 0 #000;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.78rem;
+  color: var(--gold);
+}
+
+.pixel-controls {
+  position: absolute;
+  right: 1rem;
+  bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  background: rgba(10, 14, 24, 0.85);
+  border: 3px solid #1a2030;
+  padding: 0.45rem 0.65rem;
+  font-size: 0.72rem;
+  color: var(--text-dim);
+}
+
+.pixel-prompt {
+  position: absolute;
+  left: 50%;
+  bottom: 5.5rem;
+  transform: translateX(-50%);
+  background: #121a2a;
+  border: 3px solid var(--gold);
+  box-shadow: 4px 4px 0 #000;
+  padding: 0.65rem 1rem;
+  font-size: 0.95rem;
+  color: var(--gold);
+  animation: pixelBlink 1.2s steps(2, end) infinite;
+}
+
+.pixel-alert {
+  position: absolute;
+  top: 3.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #5a2020;
+  border: 3px solid #ff6b5a;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.8rem;
+  color: #ffd0c8;
+}
+
+@keyframes pixelBlink {
+  50% {
+    border-color: #fff3c0;
+  }
+}
+
+.pixel-title {
+  background:
+    linear-gradient(180deg, rgba(8, 14, 28, 0.2) 0%, rgba(8, 14, 28, 0.75) 55%, rgba(8, 14, 28, 0.95) 100%);
+  justify-content: center;
+  align-items: center;
+  padding: 1.5rem;
+}
+
+.pixel-title-card {
+  width: min(92vw, 520px);
+  background: #121a2a;
+  border: 4px solid #1a2030;
+  box-shadow: 8px 8px 0 #000;
+  padding: 1.5rem 1.35rem 1.25rem;
+  animation: riseIn 0.5s ease;
+}
+
+.pixel-eyebrow {
+  margin: 0 0 0.4rem;
+  color: var(--mint);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+}
+
+.pixel-title .brand {
+  font-family: var(--font-display);
+  font-size: clamp(2.6rem, 10vw, 4.2rem);
+  line-height: 0.95;
+  margin: 0;
+  color: var(--gold);
+  text-shadow: 4px 4px 0 #000;
+}
+
+.pixel-title .tagline {
+  margin: 0.85rem 0 1.25rem;
+  color: var(--text-dim);
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.pixel-howto {
+  margin: 1rem 0 0;
+  font-size: 0.78rem;
+}
+
+.pixel-rpg .panel {
+  border: 4px solid #1a2030;
+  border-radius: 0;
+  box-shadow: 6px 6px 0 #000;
+  background: #121a2a;
+}
+
+.pixel-rpg .panel h2 {
+  font-family: var(--font-display);
+  color: var(--gold);
+  text-shadow: 2px 2px 0 #000;
+}
+
+.pixel-rpg .hud {
+  background: linear-gradient(180deg, rgba(8, 14, 28, 0.88), transparent);
+}
+
+.pixel-rpg .hud-stats .stat .value {
+  font-family: var(--font-display);
+}
+
+.pixel-rpg .location-hint {
+  border: 3px solid #1a2030;
+  border-radius: 0;
+  box-shadow: 3px 3px 0 #000;
+  background: #121a2a;
+}
+
+.pixel-rpg .location-hint kbd {
+  display: inline-block;
+  border: 2px solid var(--gold);
+  padding: 0 0.35rem;
+  color: var(--gold);
+  background: #0a1020;
+}
+
+.pixel-rpg .log-dock {
+  border: 3px solid #1a2030;
+  border-radius: 0;
+  box-shadow: 3px 3px 0 #000;
+  background: rgba(10, 14, 24, 0.9);
+}
+
+.pixel-rpg .toast {
+  border: 3px solid var(--gold);
+  border-radius: 0;
+  box-shadow: 4px 4px 0 #000;
+}
+
+.pixel-rpg .trade-panel {
+  border-radius: 0;
+  border: 4px solid #1a2030;
+  box-shadow: 6px 6px 0 #000;
+}
+
+.pixel-rpg .trade-submit {
+  border-radius: 0;
+  border: 3px solid #1a1814;
+  box-shadow: 3px 3px 0 #000;
+}
+
+.pixel-rpg .end-card {
+  border: 4px solid #1a2030;
+  border-radius: 0;
+  box-shadow: 8px 8px 0 #000;
+  background: #121a2a;
+}
+
+.pixel-rpg .end-card h1 {
+  color: var(--gold);
+  text-shadow: 3px 3px 0 #000;
+}
+
+.pixel-rpg input[type='number'],
+.pixel-rpg input[type='text'],
+.pixel-rpg select {
+  border-radius: 0;
+  border: 3px solid #1a2030;
+  background: #0a1020;
 }
 
